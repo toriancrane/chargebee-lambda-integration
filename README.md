@@ -15,7 +15,7 @@ This guide will walk you through one option for how you can build your own integ
 - A free [Chargebee](https://www.chargebee.com/) account
 - [Chargebee API Key](https://www.chargebee.com/docs/2.0/api_keys.html)
   - It is recommended to follow the best practices of least privileges when assigning access to your API key.
-- Programming fundamentals
+- Programming Fundamentals
 
 >:bulb: It is highly recommended that the steps followed in this guide are done in your Test environment in Chargebee and a development account in AWS.
 
@@ -27,30 +27,17 @@ The architecture for this guide is very straightforward. [AWS Lambda](https://aw
 
 ## Implementation Instructions
 
-<details>
-  <summary><h3>Step 0: [Optional] Import Sample Data to Chargebee</h3></summary>
-
+### Step 0: [Optional] Import Sample Data to Chargebee
 You may already have sample data to work with in your Chargebee environment, and you are welcome to use that for this tutorial. If you do not have sample data, feel free to use the sample data provided in the `chargebee-sample-customer-data.csv` file that is included in this repository. Follow the steps found in Chargebee's [Bulk Operations documentation](https://www.chargebee.com/docs/2.0/bulk-operations.html) to pre-load this data before continuing on.
 
-</details>
 
-<details>
-  <summary><h3>Step 1: Select a Region</h3></summary>
+### Step 1: Select a Region
+This application can be deployed in any AWS region that supports all the services used in this application (see the Architecture Overview section). You can refer to the [region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) to see which regions support these services. For the purpose of this guide, we will be creating resources in the US East (N. Virginia) region. You can select this region from the dropdown in the upper right corner of the [AWS Management Console](https://console.aws.amazon.com/console/home).
 
----
-
-This application can be deployed in any AWS region that supports all of the services used in this application (see the Architecture Overview section). You can refer to the [region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) to see which regions support these services. For the purpose of this guide, we will be creating resources in the US East (N. Virginia) region. You can select this region from the dropdown in the upper right corner of the [AWS Management Console](https://console.aws.amazon.com/console/home).
-
-</details>
-
-<details>
-  <summary><h3>Step 2: Create an AWS Systems Manager Parameter</h3></summary>
-
----
-
+### Step 2: Create an AWS Systems Manager Parameter
 AWS Systems Manager (SSM) Parameter Store provides the ability to securely store data such as passwords, database strings, and license codes as parameter values. 
 
-In this step, you will use the AWS console to create an SSM Parameter that will store the value of the Chargebee API key. We will later reference this value in our Lambda script that will invoke the Chargebee API.
+In this step, you will use the AWS console to create an SSM Parameter that will store the value of the Chargebee API key. We will later reference this value in our Lambda script that will invoke the Chargebee API call.
 
 ---
 
@@ -68,8 +55,6 @@ c. On the **Create parameter** provide a unique name for your parameter. For the
 
 d. Under **Type**, select the `SecureString` radio button. This will apply encryption to the value that is stored in the parameter. Under the **KMS Key ID** section, a default KMS key will auto-populate. This will be the key that is used to encrypt the parameter data. 
 
-> :bulb: You have the ability to create your own KMS key, but that requires additional configuration that is outside of the scope of this guide. See the [AWS Key Management Service Developer Guide](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html) for more details.
-
 ![SSM Parameter image](img/ssm-create-param-type.png)
 
 e. In the **Value** text box, enter the value of your Chargebee API key. Then click the `Create parameter` button to create your parameter.
@@ -80,31 +65,9 @@ You should see the following in the SSM Parameter Store console upon successful 
 
 ![SSM Parameter image](img/ssm-param-created.png)
 
-</details>
-<details>
-  <summary><h3>Step 3: Create a Lambda Function to initiate an Export from Chargebee</h3></summary>
-
----
-
+### Step 2: Create a Lambda Function to initiate an Export from Chargebee
 In this guide, we will be making use of the [Chargebee API](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2). The Chargebee API supports a number of programming languages. You'll want to make sure you select both the Product Catalog version that is relevant to the version of Chargebee you are using as well as your supported programming language of choice to make sure you are seeing the correct documentation for your environment. 
 
 ![Chargebee API Docs image](img/chargebee-api-docs.png)
 
 For the purpose of this tutorial, we will be using `Product Catalog 2.0` as the version and `Python` as the language.
-
-</details>
-
-
-
-<details><summary>Hello Would</summary><blockquote>
-  <details>
-    <summary>Step 1</summary>
-
-    First section
-  </details>
-  <details>
-    <summary>Step 2</summary>
-
-    Second section
-  </details>
-</blockquote></details>
