@@ -27,12 +27,8 @@ The architecture for this guide is very straightforward. [AWS Lambda](https://aw
 
 ## Implementation Instructions
 
-
-
 <details>
   <summary><h3>Step 0: [Optional] Import Sample Data to Chargebee</h3></summary>
-
----
 
 You may already have sample data to work with in your Chargebee environment, and you are welcome to use that for this tutorial. If you do not have sample data, feel free to use the sample data provided in the `chargebee-sample-customer-data.csv` file that is included in this repository. Follow the steps found in Chargebee's [Bulk Operations documentation](https://www.chargebee.com/docs/2.0/bulk-operations.html) to pre-load this data before continuing on.
 
@@ -101,3 +97,16 @@ For the purpose of this tutorial, we will be using `Product Catalog 2.0` as the 
 
 
 
+<details><summary>Hello Would</summary><blockquote>
+  <details>
+    <summary>Step 1</summary>
+
+    First section
+  </details>
+
+  <details>
+    <summary>Step 2</summary>
+
+    Second section
+  </details>
+</blockquote></details>
