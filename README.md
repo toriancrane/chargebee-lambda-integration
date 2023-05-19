@@ -81,7 +81,6 @@ You should see the following in the SSM Parameter Store console upon successful 
 ![SSM Parameter image](img/ssm-param-created.png)
 
 </details>
-
 <details>
   <summary><h3>Step 3: Create a Lambda Function to initiate an Export from Chargebee</h3></summary>
 
@@ -103,7 +102,6 @@ For the purpose of this tutorial, we will be using `Product Catalog 2.0` as the 
 
     First section
   </details>
-
   <details>
     <summary>Step 2</summary>
 
