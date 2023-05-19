@@ -11,7 +11,7 @@ Chargebee also offers native reporting functionality, but there may be times whe
 
 This guide will walk you through one option for how you can build your own integration using Amazon Web Services (AWS). More specifically, you will be able to ingest data from your Chargebee account into AWS and use that data for your own custom reporting workflows.
 
-![architecture](architecture.png)
+![architecture](architecture.jpg)
 
 ## Pre-Requisites
 - A free [AWS account](https://aws.amazon.com/free/)
