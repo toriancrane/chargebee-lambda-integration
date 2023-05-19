@@ -47,9 +47,12 @@ accordion:
         In this guide, we will be making use of the [Chargebee API](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2). The Chargebee API supports a number of programming languages. You'll want to make sure you select both the Product Catalog version that is relevant to the version of Chargebee you are using as well as your supported programming language of choice to make sure you are seeing the correct documentation for your environment. 
 
         ![Chargebee API Docs image](img/chargebee-api-docs.png)
-
+        
         For the purpose of this tutorial, we will be using `Product Catalog 2.0` as the version and `Python` as the language.
+
 ---
+
+> The contents of this tutorial are currently a work in progress.
 
 [Chargebee](https://www.chargebee.com/) is a recurring billing and subscription management tool that helps subscription businesses streamline their Revenue Operations. It offers a variety of functionality, including:
 - Managing recurring billing and subscriptions seamlessly
