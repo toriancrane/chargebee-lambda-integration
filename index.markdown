@@ -284,9 +284,23 @@ accordion:
         <br>
         
         
-        c. The next page is where you will design the workflow as shown in the `AWS Step Functions workflow` part of architecture diagram.
+        c. The next page is the Step Functions Workflow Studio.
         
-        <p align="center"><img src="img/architecture-workflow-highlight.png" alt="Architecture Diagram" width="80%" height="80%"></p>
+        <p align="center"><img src="img/state-machine-workflow-designer.png" alt="Architecture Diagram" width="90%" height="90%"></p>
+        <br>
+        
+        We will use this visual designer to create workflow as shown in the highlighted `AWS Step Functions workflow` part of architecture diagram below.
+        
+        <p align="center"><img src="img/architecture-workflow-highlight.png" alt="Workflow Designer image" width="90%" height="90%"></p>
+        <br>
+        
+        The first step we will add to our workflow is the "Export" lambda function we created in a previous step. We will do this by dragging and dropping the `AWS Lambda Invoke` action from the left menu into the designer form space.
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/add-export-lambda-invoke.mp4" type="video/mp4">
+            </video>
+        </p>
+                
 ---
 
 > The contents of this tutorial are currently a work in progress.
@@ -315,7 +329,7 @@ This guide will walk you through one option for how you can build your own integ
 
 <p align="center"><img src="img/architecture.jpg" alt="Architecture Diagram" width="90%" height="90%"></p>
 
-The architecture for this guide is very straightforward. [AWS Lambda](https://aws.amazon.com/lambda/) will initiate an export API call to the Chargebee API. A secondary Lambda will download those files once they are ready. All of your exported Chargebee files will be stored in [Amazon S3](https://aws.amazon.com/s3/). [AWS Step Functions](https://aws.amazon.com/step-functions/) will orchestrate the entire workflow, and your Chargebee API key will be stored in (and referenced from) [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html). The parameter will be encrypted using [AWS Key Management Service](https://aws.amazon.com/kms/). An optional [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/eventbridge/latest/userguide/scheduler.html) can trigger the workflow on a scheduled basis.  
+The architecture for this guide is very straightforward. [AWS Lambda](https://aws.amazon.com/lambda/) will initiate an export API call to the Chargebee API. A secondary Lambda will download those files once they are ready. All of your exported Chargebee files will be stored in [Amazon S3](https://aws.amazon.com/s3/). [AWS Step Functions](https://aws.amazon.com/step-functions/) will orchestrate the entire workflow, and your Chargebee Site name and API key will be stored in (and referenced from) [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html). The parameters will be encrypted using [AWS Key Management Service](https://aws.amazon.com/kms/). An optional [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/eventbridge/latest/userguide/scheduler.html) can trigger the workflow on a scheduled basis.  
 
 <br>
 
