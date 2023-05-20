@@ -29,7 +29,7 @@ accordion:
         <p align="center"><img src="img/create-param.png" alt="Create Parameter image" width="90%" height="90%"></p>
         <br>
         
-        c. On the **Create parameter** provide a unique name for your parameter. For the purpose of this guide, we will use `chargebee-apikey` as the name. Keep the default Tier of `Standard` selected.
+        c. On the **Create parameter** page, provide a unique name for your parameter. For the purpose of this guide, we will use `chargebee-apikey` as the name. Keep the default Tier of `Standard` selected.
         
         <p align="center"><img src="img/ssm-create-param-name.png" alt="SSM Parameter image" width="90%" height="90%"></p>
         <br>
@@ -59,7 +59,7 @@ accordion:
         <p align="center"><img src="img/s3-create-bucket.png" alt="S3 Create Bucket image" width="90%" height="90%"></p>
         <br>
         
-        b. Provide a globally unique name for your bucket such as `chargebee-exports-firstname-lastname`. If you get an error that your bucket name already exists, try adding additional numbers or characters until you find an unused name. Also, make sure the Region you've chosen to use for this workshop is selected in the dropdown.
+        b. On the **Create bucket** page, provide a globally unique name for your bucket such as `chargebee-to-aws-workshop`. If you get an error that your bucket name already exists, try adding additional numbers or characters until you find an unused name. Also, make sure the Region you've chosen to use for this workshop is selected in the dropdown.
         
         <p align="center"><img src="img/s3-create-bucket-name.png" alt="S3 Create Bucket Name image" width="90%" height="90%"></p>
         <br>        
@@ -70,15 +70,149 @@ accordion:
         
         You should see the following in the S3 console upon successful creation:
         
-        <p align="center"><img src="img/s3-bucket-created.png" alt="S3 Bucket Created image" width="90%" height="90%"></p> 
-  - title: Step 4. Create a Lambda Function to initiate an Export from Chargebee
+        <p align="center"><img src="img/s3-bucket-created.png" alt="S3 Bucket Created image" width="90%" height="90%"></p>
+        
+  - title: Step 4. Create an IAM Role for your Lambda Functions
     content: |-
-        In this guide, we will be making use of the [Chargebee API](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2). The Chargebee API supports a number of programming languages. You'll want to make sure you select both the Product Catalog version that is relevant to the version of Chargebee you are using as well as your supported programming language of choice to make sure you are seeing the correct documentation for your environment. 
+        In this step, we will create a Lambda Execution role for our Lambda functions. This role defines what other AWS services the function is allowed to interact with (see [Lambda Execution Role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)).
+        
+        For the purposes of this workshop, we'll need to create an IAM role that grants your Lambda functions the following permissions:
+        
+        a. write logs to Amazon CloudWatch Logs
+        
+        b. read parameter values from Systems Manager Parameter Store
+        
+        c. write files to an S3 bucket
 
-        ![Chargebee API Docs image](img/chargebee-api-docs.png)
+        ---
         
-        For the purpose of this tutorial, we will be using `Product Catalog 2.0` as the version and `Python` as the language.
+        <br>
         
+        a. In the AWS Management Console, navigate to the IAM service. Then click the `Roles` link in the left hand menu.
+        
+        <p align="center"><img src="img/iam-create-role.png" alt="IAM Create Role image" width="90%" height="90%"></p>
+        <br>
+        
+        b. Then click the `Create role` button.
+        
+        <p align="center"><img src="img/iam-create-role-button.png" alt="IAM Create Role image" width="90%" height="90%"></p>
+        <br>
+        
+        c. In the **Select trusted entity** page, keep the default selection of `AWS Service`.
+        
+        <p align="center"><img src="img/iam-create-role-trust.png" alt="IAM Create Role image" width="90%" height="90%"></p>
+        <br>
+        
+        d. Under the **Use case** section further down the page, select the radio button next to `Lambda`. Then click the `Next` button.
+        
+        <p align="center"><img src="img/iam-create-role-use-case.png" alt="IAM Create Role Use Case image" width="90%" height="90%"></p>
+        <br>
+        
+        e. In the **Add permissions** page, under the **Permissions policies** section, search for and select the following Policy names:
+        
+        `AWSLambdaBasicExecutionRole`
+        
+        `AmazonSSMReadOnlyAccess`
+        
+        <br>
+        
+        Then click `Next`.
+        
+        <p align="center"><img src="img/iam-create-role-perms.png" alt="IAM Create Role Permissions image" width="90%" height="90%"></p>
+        <br>
+        
+        f. On the **Name, review, and create** page, provide a name for your IAM role such as `ChargebeeExportExecutionRole`. Then click the `Create role` button at the bottom of the page.
+        
+        <p align="center"><img src="img/iam-create-role-name.png" alt="IAM Create Role Name image" width="90%" height="90%"></p>
+        <br>
+        
+        <p align="center"><img src="img/iam-create-role-final.png" alt="IAM Role Create Role image" width="90%" height="90%"></p>
+        <br>
+        
+        g. You will be redirected to the **Roles** page once the role has finished creating. In the search box of this page, enter the name of the role you just created (Ex: `ChargebeeExportExecutionRole`) and click the role's link.
+        
+        <p align="center"><img src="img/iam-role-search.png" alt="IAM Role Search image" width="90%" height="90%"></p>
+        <br>
+        
+        h. Under the **Permissions policies** section, click the `Add permissions` dropdown, and select `Create inline policy`.
+        
+        <p align="center"><img src="img/iam-create-inline-policy.png" alt="IAM Create Inline Policy image" width="90%" height="90%"></p>
+        <br>
+        
+        i. Select `Choose a service`. Type in `S3` into the **Find a service** search box and select **S3** when it appears.
+        
+        <p align="center"><img src="img/iam-policy-select-s3.png" alt="IAM Policy Select S3 image" width="90%" height="90%"></p>
+        <br>
+        
+        j. Under **Actions - Specify the actions allowed in S3**, search for and select the following permissions:
+        
+        `ListBucket`
+        
+        `ListAllMyBuckets`
+        
+        `PutObject`
+        
+        `PutObjectTagging`
+        
+        `PutObjectVersionTagging`
+        
+        `PutObjectAcl`
+        
+        <p align="center"><img src="img/iam-policy-select-actions.png" alt="IAM Policy Select Actions image" width="90%" height="90%"></p>
+        <br>
+        
+        h. Select the **Resources** section. Keeping the `Specific` option selected, click the `Add ARN` link in the **bucket** section.
+        
+        <p align="center"><img src="img/iam-policy-select-resources.png" alt="IAM Policy Select Resources image" width="90%" height="90%"></p>
+        <br>
+        
+        g. In the **Add ARN(s)** pop-up modal, type in the name of the S3 bucket you created earlier in this guide. Then click `Add`.
+        
+        <p align="center"><img src="img/iam-policy-select-bucket.png" alt="IAM Policy Select Bucket image" width="90%" height="90%"></p>
+        <br>
+        
+        h. Under **Resources** next to the **object** section, select the check box next to `Any`. Then click `Review policy`.
+        
+        <p align="center"><img src="img/iam-policy-review.png" alt="IAM Policy Review image" width="90%" height="90%"></p>
+        <br>
+        
+        i. On the **Review policy** page, give a name to your policy such as `ChargebeeS3WriteAccess`. Then click `Create policy`.
+        
+        <p align="center"><img src="img/iam-policy-create-final.png" alt="IAM Policy Create image" width="90%" height="90%"></p>
+        <br>
+        
+        You should see the following inline policy in the **Permissions policies** section of your IAM Role.
+        
+        <p align="center"><img src="img/iam-policy-created.png" alt="IAM Policy Created image" width="90%" height="90%"></p>
+        <br>
+        
+  - title: Step 5. Create a Lambda Function to initiate an Export from Chargebee
+    content: |-
+        In this step, we will be making use of the [Chargebee API](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2) to build the core function that will initate the exporting of data from Chargebee. The Chargebee API supports a number of programming languages. You'll want to make sure you select both the Product Catalog version that is relevant to the version of Chargebee you are using as well as your supported programming language of choice to make sure you are seeing the correct documentation for your environment. 
+
+        <p align="center"><img src="img/chargebee-api-docs.png" alt="Chargebee API Docs image" width="90%" height="90%"></p>
+        <br>
+        
+        For the purpose of this tutorial, we will be using the `Product Catalog 2.0` version and the `Python` language of the documentation, and we will be specifically making use of the [Export Customers API](https://apidocs.chargebee.com/docs/api/exports?prod_cat_ver=2#export_customers).
+        
+         ---
+        
+        <br>
+        a. In the AWS Management Console, navigate to the Lambda service. Then click the `Create function` button on the top right side of the screen.
+        
+        <p align="center"><img src="img/lambda-create-function.png" alt="Lambda Create Function image" width="90%" height="90%"></p>
+        <br>
+        
+        b. On the **Create function** page, provide a unique name for your Lambda function such as `chargebee-export-function`. Under **Runtime**, select the latest supported `Python` runtime (`Python 3.10` at the time of this guide's creation). Leave the default value selected under **Architecture**.
+        
+        <p align="center"><img src="img/lambda-create-function-name.png" alt="Lambda Create Function Name image" width="90%" height="90%"></p>
+        <br>
+        
+        c. Click the `Change default execution role` and ensure that the default option of `Create a new role with basic Lambda permissions` is selected. Then click the `Create function` button at the bottom right hand side of the page.
+        
+        <p align="center"><img src="img/lambda-create-function-final.png" alt="Lambda Create Function Button image" width="90%" height="90%"></p>
+        <br>
+
 ---
 
 > The contents of this tutorial are currently a work in progress.
