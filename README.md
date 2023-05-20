@@ -11,6 +11,13 @@
 
 Chargebee also offers native reporting functionality, but there may be times where one might have more complex reporting needs than what is available on the platform by default. Fortunately, Chargebee also has a marketplace of third party tools that you can leverage to meet a variety of needs, and they also offer an API that you can use to build your own! This application is a custom exporting integration between Chargebee and Amazon Web Services (AWS).
 
+# Table of Contents
+
+1. [Pre-Requisites](#pre-requisites)
+2. [Architecture Overview](#architecture-overview)
+3. [Step-by-Step Tutorial](#step-by-step-tutorial)
+4. [Deployment Instructions](#deployment-instructions)
+
 ## Pre-Requisites
 - A free [AWS account](https://aws.amazon.com/free/)
 - A free [Chargebee](https://www.chargebee.com/) account
