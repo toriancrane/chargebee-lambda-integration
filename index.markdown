@@ -198,14 +198,14 @@ accordion:
         <p align="center"><img src="img/lambda-layer-create.png" alt="Create Lambda Layer image" width="90%" height="90%"></p>
         <br>
         
-        b. On the **Create layer** page, provide a name for your Lambda Layer such as `chargebee-requests-lambda-layer`. With `Upload a .zip file` selected, click the `Upload` button and select the zip file downloaded in the previous step.
+        b. On the **Create layer** page, provide a name for your Lambda Layer such as `chargebee-requests-layer`. With `Upload a .zip file` selected, click the `Upload` button and select the zip file downloaded in the previous step.
         
         <p align="center"><img src="img/lambda-layer-create-name.png" alt="Create Lambda Layer Name image" width="90%" height="90%"></p>
         <br>
         
-        c. Leave the remaining optional configurations blank.
+        c. In the **Compatible architectures** section, select the check box next to `x86_64`. In the **Compatible runtimes** section, select the latest supported `Python` runtime (`Python 3.10` as of the time of this guide's creation) from the dropdown. 
         
-        > You can learn more about these settings in the [Creating a layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-create) AWS documentation.
+        > You can learn more about these configuration settings in the [Creating a layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-create) AWS documentation.
         
         Then click `Create`.
         
@@ -233,7 +233,7 @@ accordion:
         <p align="center"><img src="img/lambda-create-function.png" alt="Lambda Create Function image" width="90%" height="90%"></p>
         <br>
         
-        b. On the **Create function** page, provide a unique name for your Lambda function such as `chargebee-export-function`. Under **Runtime**, select the latest supported `Python` runtime (`Python 3.10` at the time of this guide's creation). Leave the default value selected under **Architecture**.
+        b. On the **Create function** page, provide a unique name for your Lambda function such as `chargebee-export-function`. Under **Runtime**, select the latest supported `Python` runtime (make sure it matches the same runtime as the one that was selected during the Lambda Layer creation process). Leave the default value selected under **Architecture**.
         
         <p align="center"><img src="img/lambda-create-function-name.png" alt="Lambda Create Function Name image" width="90%" height="90%"></p>
         <br>
@@ -242,7 +242,20 @@ accordion:
         
         <p align="center"><img src="img/lambda-create-function-final.png" alt="Lambda Create Function Button image" width="90%" height="90%"></p>
         <br>
-
+        
+        d. In the lambda function console, scroll all the way to the bottom of the page until you see the **Layers** section. Click `Add a layer`.
+        
+        <p align="center"><img src="img/lambda-add-layer.png" alt="Lambda Add Layer image" width="90%" height="90%"></p>
+        <br>
+        
+        e. In the **Add layer** page in the **Choose a layer** section, select the `Custom layers` option under **Layer source**. Then select the lambda layer created in the previous section under the **Custom layers** dropdown. Select the latest version of the lambda layer in the **Version** dropdown. Then click `Add`.
+        
+        <p align="center"><img src="img/lambda-add-layer-config.png" alt="Lambda Add Layer Configuration image" width="90%" height="90%"></p>
+        <br>
+        
+        f. TBD
+        
+        
 ---
 
 > The contents of this tutorial are currently a work in progress.
