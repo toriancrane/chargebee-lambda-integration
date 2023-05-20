@@ -1,1 +1,441 @@
-TBD
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation template that deploys AWS infrastructure for the Chargebee Export Integration.
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label: 
+          default: "Chargebee Configuration"
+        Parameters: 
+          - pChargebeeSiteName
+          - pChargebeeApiKey
+      - 
+        Label: 
+          default: "AWS Configuration"
+        Parameters: 
+          - pBucketName
+          - pLambdaLayerArn
+    ParameterLabels: 
+      pChargebeeSiteName: 
+        default: "Chargebee Site Name"
+      pChargebeeApiKey: 
+        default: "Chargebee API Key"
+      pBucketName: 
+        default: "S3 Bucket Name"
+      pLambdaLayerArn: 
+        default: "Lambda Layer ARN"
+
+Parameters:
+  pBucketName:
+    Type: String
+    Default: sap-tap-farms-exports
+    Description: The name to give your S3 Bucket that will store the exported files
+
+  pChargebeeSiteName:
+    Type: String
+    Default: saptapfarms-test
+    Description: The name of your Chargebee site
+    NoEcho: true
+
+  pChargebeeApiKey:
+    Type: String
+    Description: The value of your Chargebee API Key
+    NoEcho: true
+
+  pLambdaLayerArn:
+    Type: String
+    Description: The ARN of the Lambda layer that has the Chargebee and Requests modules installed
+    Default: ""
+
+Resources:
+
+#############################
+####### IAM Resources #######
+#############################
+  rLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "export-download-lambda-role"
+      Description: An execution role for the Chargebee Exporter Intregration Lambdas
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+
+  rStatesExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "state-machine-execution-role"
+      Description: An execution role for the Chargebee Exporter Intregration State Machine
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "logs:*"
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+
+  rStatesTriggerRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "ChargebeeExportStateMachineRole"
+      Description: An execution role for Event Bridge to trigger the state machine
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - events.amazonaws.com
+                - scheduler.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: StateMachineExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "states:StartExecution"
+                Resource: "*"
+
+#############################
+####### S3 Resources ########
+#############################
+
+  rS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref pBucketName
+      Tags:
+        - Key: Name
+          Value: !Ref pBucketName
+
+  rS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: !Ref pBucketName
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: Allow Lambda
+            Action:
+              - 's3:*'
+            Effect: Allow
+            Resource:
+            - !GetAtt 'rS3Bucket.Arn'
+            - !Sub '${rS3Bucket.Arn}/*'
+            Principal: 
+              AWS: [ !GetAtt rLambdaRole.Arn ]
+
+#############################
+######## SSM Resources ######
+#############################
+  rChargebeeApiParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: String
+      Name: chargebee-apikey
+      Policies: String
+      Tags: Json
+      Tier: String
+      Type: String
+      Value: String
+      
+  rChargebeeSiteParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: String
+      Name: chargebee-sitename
+      Policies: String
+      Tags: Json
+      Tier: String
+      Type: String
+      Value: String
+
+
+#############################
+###### Lambda Resources #####
+#############################
+
+  rExportLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Initiates a Chargebee export and returns a download URL
+      FunctionName: export-from-chargebee
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.10
+      Role: !GetAtt 'rLambdaRole.Arn'
+      Layers: 
+        - !Ref pLambdaLayerArn
+      Timeout: 60
+      Environment:
+        Variables:
+          SITE_PARAM_NAME: !Ref rChargebeeSiteParam
+          API_PARAM_NAME: !Ref rChargebeeApiParam
+      Code:
+        ZipFile: |
+            import json
+            import boto3
+            from botocore.exceptions import ClientError
+            import chargebee
+
+            ssm_client = boto3.client('ssm')
+
+            API_PARAM_NAME = "chargebee-apikey"
+            SITE_PARAM_NAME = "chargebee-sitename"
+
+            def lambda_handler(event, context):
+
+                # Securely collects the values of the Chargebee Site Name and API key from SSM
+                chargebee_site, chargebee_api_key = get_chargebee_params()
+
+                # Initializes and configures the Chargebee client
+                chargebee.configure(chargebee_api_key, chargebee_site)
+
+                # Makes a call to the Chargebee API to initiate Export for new event
+                if event["Status"] in ['', 'INITIATED']:
+                    export_id = initiate_export()
+                    event['ExportId'] = export_id
+                    event['Status'] = "in_process"
+                # Makes a call to Chargebee API to check on the export status for in-progress events
+                elif event['Status'] in ['in_process']:
+                    export_id = event['ExportId']
+                    export_status_output = get_export_status(export_id).__dict__
+                    export_values = export_status_output['values']
+
+                    status = export_values['status']
+
+                    # Retrieves the download URL for requested export when ready and marks event as complete
+                    if status in ['completed']:
+                        event['Url'] = export_values['download']['download_url']
+
+                    event['Status'] = status
+
+                return event
+
+            def get_chargebee_params():
+
+                param_names = [API_PARAM_NAME, SITE_PARAM_NAME]
+
+                chargebee_site = ""
+                chargebee_api_key = ""
+
+                for name in param_names:
+                    response = ssm_client.get_parameter(
+                        Name=name,
+                        WithDecryption=True
+                    )
+
+                    param_value = response['Parameter']['Value']
+
+                    if "sitename" in name:
+                        chargebee_site = param_value
+                    elif "apikey":
+                        chargebee_api_key = param_value
+
+                return chargebee_site, chargebee_api_key
+
+            def initiate_export():  
+                result = chargebee.Export.customers({})
+                export_id = result.export.id
+
+                return export_id
+
+            def get_export_status(export_id):
+
+                result = chargebee.Export.retrieve(export_id)
+                export = result.export
+                return export
+  
+  rDownloadLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Downloads the Chargbee Export zip file and stores the CSVs in S3
+      FunctionName: download-from-chargebee
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Runtime: python3.10
+      Role: !GetAtt 'rLambdaRole.Arn'
+      Layers: 
+        - !Ref pLambdaLayerArn
+      Timeout: 60
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref pBucketName
+      Code:
+        ZipFile: |
+            import requests
+            import json
+            import boto3
+            import zipfile
+            import io
+            import os
+
+            s3_resource = boto3.resource('s3')
+            s3_client = boto3.client('s3')
+
+            BUCKET_NAME = os.environ['BUCKET_NAME']
+            FOLDER_NAME = 'exports'
+
+            def lambda_handler(event, context):
+                download_export(event)
+              
+                print("Download started...")
+                url=event["Url"]
+                req = requests.get(url)
+                content = io.BytesIO(req.content)
+                
+                z = zipfile.ZipFile(content)
+                
+                for filename in z.namelist():
+                    file_info = z.getinfo(filename)
+                    s3_resource.meta.client.upload_fileobj(
+                        z.open(filename),
+                        Bucket=BUCKET_NAME,
+                        Key=f'{FOLDER_NAME}/{filename}'
+                    )
+                    
+                print("Download complete!")
+                
+                return event
+
+  rEventScheduler:
+    Type: AWS::Scheduler::Schedule
+    DependsOn: [ rStateMachine ]
+    Properties: 
+      Description: Cron job that triggers the export process
+      FlexibleTimeWindow: 
+        Mode: "OFF"
+      State: ENABLED
+      ScheduleExpression: cron(0 1 ? * MON *)
+      ScheduleExpressionTimezone: America/New_York
+      Target: 
+        Arn: !GetAtt rStateMachine.Arn
+        Input: !Sub |-
+          { 
+            "Url": "", 
+            "Status": "", 
+            "ExportId": ""
+          }
+        RoleArn: !GetAtt rStatesTriggerRole.Arn
+
+
+
+#############################
+####### State Machine #######
+#############################
+
+  rStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: SapTapFarmsExporter-StateMachine
+      DefinitionSubstitutions:
+        ExportFunction: !GetAtt rExportLambda.Arn
+        DownloadFunction: !GetAtt rDownloadLambda.Arn
+      DefinitionString: |-
+        {
+          "Comment": "Chargebee Export Workflow",
+          "StartAt": "Chargebee Exporter",
+          "States": {
+            "Chargebee Exporter": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "OutputPath": "$.Payload",
+              "Parameters": {
+                "FunctionName": "${ExportFunction}",
+                "Payload.$": "$"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "Wait for Export"
+            },
+            "Wait for Export": {
+              "Type": "Wait",
+              "Seconds": 10,
+              "Next": "Check Status of Export"
+            },
+            "Check Status of Export": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.Status",
+                  "StringEquals": "completed",
+                  "Next": "Lambda Invoke"
+                },
+                {
+                  "Variable": "$.Status",
+                  "StringEquals": "in_process",
+                  "Next": "Chargebee Exporter"
+                }
+              ],
+              "Default": "Fail"
+            },
+            "Lambda Invoke": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "OutputPath": "$.Payload",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${DownloadFunction}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "Export Complete"
+            },
+            "Export Complete": {
+              "Type": "Succeed"
+            },
+            "Fail": {
+              "Type": "Fail"
+            }
+          }
+        }
+      RoleArn: !GetAtt rStatesExecutionRole.Arn
