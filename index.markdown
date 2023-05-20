@@ -19,32 +19,29 @@ accordion:
         ---
         
         <br>
-        a. In the AWS Console, navigate to the **AWS Systems Manager** service. The click the `Parameter Store` link in the left hand menu.
+        a. In the AWS Console, navigate to the **AWS Systems Manager** service. The click the `Parameter Store` link in the left hand menu. Then click `Create parameter`.
         
-        <p align="center"><img src="img/ssm-console.png" alt="SSM Console image" width="90%" height="90%"></p>
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/initiate-ssm-param-creation.mp4" type="video/mp4">
+            </video>
+        </p>
         <br>
         
-        b. Then click `Create parameter`.
+        b. On the **Create parameter** page, provide a unique name for your parameter. For the purpose of this guide, we will use `chargebee-apikey` as the name. Keep the default Tier of `Standard` selected.
         
-        <p align="center"><img src="img/create-param.png" alt="Create Parameter image" width="90%" height="90%"></p>
+        c. Under **Type**, select the `SecureString` radio button. This will apply encryption to the value that is stored in the parameter. Under the **KMS Key ID** section, a default KMS key will auto-populate. This will be the key that is used to encrypt the parameter data.
+        
+        d. In the **Value** text box, enter the value of your Chargebee API key. Then click the `Create parameter` button to create your parameter.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/create-new-ssm-param.mp4" type="video/mp4">
+            </video>
+        </p>
         <br>
         
-        c. On the **Create parameter** page, provide a unique name for your parameter. For the purpose of this guide, we will use `chargebee-apikey` as the name. Keep the default Tier of `Standard` selected.
-        
-        <p align="center"><img src="img/ssm-create-param-name.png" alt="SSM Parameter image" width="90%" height="90%"></p>
-        <br>
-        
-        d. Under **Type**, select the `SecureString` radio button. This will apply encryption to the value that is stored in the parameter. Under the **KMS Key ID** section, a default KMS key will auto-populate. This will be the key that is used to encrypt the parameter data. 
-        
-        <p align="center"><img src="img/ssm-create-param-type.png" alt="SSM Parameter image" width="90%" height="90%"></p>
-        <br>
-        
-        e. In the **Value** text box, enter the value of your Chargebee API key. Then click the `Create parameter` button to create your parameter.
-        
-        <p align="center"><img src="img/ssm-create-param-value.png" alt="SSM Parameter image" width="90%" height="90%"></p>
-        <br>
-        
-        f. Repeat steps A through E to create another parameter and store the value of your Chargebee Site name. You should see the following in the SSM Parameter Store console upon successful creation of both parameters:
+        e. Repeat steps A through E to create another parameter and store the value of your Chargebee Site name. You should see the following in the SSM Parameter Store console upon successful creation of both parameters:
         
         <p align="center"><img src="img/ssm-param-created.png" alt="SSM Parameter Created image" width="90%" height="90%"></p>
   - title: Step 3. Create an S3 Bucket to store the export files
