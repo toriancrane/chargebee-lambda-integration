@@ -8,7 +8,7 @@ accordion:
   - title: Step 0. [Optional] Import Sample Data to Chargebee
     content: You may already have sample data to work with in your Chargebee environment, and you are welcome to use that for this tutorial. If you do not have sample data, feel free to use the sample data provided in the `chargebee-sample-customer-data.csv` file that is included in this repository. Follow the steps found in Chargebee's [Bulk Operations documentation](https://www.chargebee.com/docs/2.0/bulk-operations.html) to pre-load this data before continuing on.
   - title: Step 1. Select a Region
-    content: This application can be deployed in any AWS region that supports all the services used in this application (see the Architecture Overview section). You can refer to the [region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) to see which regions support these services. For the purpose of this guide, we will be creating resources in the US East (N. Virginia) region. You can select this region from the dropdown in the upper right corner of the [AWS Management Console](https://console.aws.amazon.com/console/home).
+    content: This application can be deployed in any AWS region that supports all the services used in this application (see the Architecture Overview section). You can refer to the [region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) to see which regions support these services. For the purpose of this guide, we will be creating resources in the **US East (N. Virginia)** region. You can select this region from the dropdown in the upper right corner of the [AWS Management Console](https://console.aws.amazon.com/console/home).
   - title: Step 2. Create an AWS Systems Manager Parameter
     content: |-
         AWS Systems Manager (SSM) Parameter Store provides the ability to securely store data such as passwords, database strings, and license codes as parameter values. 
@@ -21,35 +21,64 @@ accordion:
         <br>
         a. In the AWS Console, navigate to the AWS Systems Manager service. The click the `Parameter Store` link in the left hand menu.
         
-        ![SSM Console image](img/ssm-console.png)
+        <p align="center"><img src="img/ssm-console.png" alt="SSM Console image" width="90%" height="90%"></p>
+        <br>
         
         b. Then click `Create parameter`.
         
-        ![Create Parameter image](img/create-param.png)
+        <p align="center"><img src="img/create-param.png" alt="Create Parameter image" width="90%" height="90%"></p>
+        <br>
         
         c. On the **Create parameter** provide a unique name for your parameter. For the purpose of this guide, we will use `chargebee-apikey` as the name. Keep the default Tier of `Standard` selected.
         
-        ![SSM Parameter image](img/ssm-create-param-name.png)
+        <p align="center"><img src="img/ssm-create-param-name.png" alt="SSM Parameter image" width="90%" height="90%"></p>
+        <br>
         
         d. Under **Type**, select the `SecureString` radio button. This will apply encryption to the value that is stored in the parameter. Under the **KMS Key ID** section, a default KMS key will auto-populate. This will be the key that is used to encrypt the parameter data. 
         
-        ![SSM Parameter image](img/ssm-create-param-type.png)
+        <p align="center"><img src="img/ssm-create-param-type.png" alt="SSM Parameter image" width="90%" height="90%"></p>
+        <br>
         
         e. In the **Value** text box, enter the value of your Chargebee API key. Then click the `Create parameter` button to create your parameter.
         
-        ![SSM Parameter image](img/ssm-create-param-value.png)
+        <p align="center"><img src="img/ssm-create-param-value.png" alt="SSM Parameter image" width="90%" height="90%"></p>
+        <br>
         
         You should see the following in the SSM Parameter Store console upon successful creation:
         
-        ![SSM Parameter image](img/ssm-param-created.png)
-  - title: Step 3. Create a Lambda Function to initiate an Export from Chargebee
+        <p align="center"><img src="img/ssm-param-created.png" alt="SSM Parameter Created image" width="90%" height="90%"></p>
+  - title: Step 3. Create an S3 Bucket to store the export files
+    content: |-
+        In this step, you'll create a new S3 bucket that will be used to hold all of the downloaded Chargebee files.
+        
+        ---
+        
+        <br>
+        a. In the AWS Management Console, navigate to the S3 service. Then click the `Create bucket` button on the right hand side of the screen.
+        
+        <p align="center"><img src="img/s3-create-bucket.png" alt="S3 Create Bucket image" width="90%" height="90%"></p>
+        <br>
+        
+        b. Provide a globally unique name for your bucket such as `chargebee-exports-firstname-lastname`. If you get an error that your bucket name already exists, try adding additional numbers or characters until you find an unused name. Also, make sure the Region you've chosen to use for this workshop is selected in the dropdown.
+        
+        <p align="center"><img src="img/s3-create-bucket-name.png" alt="S3 Create Bucket Name image" width="90%" height="90%"></p>
+        <br>        
+
+        c. Choose `Create` in the lower left corner of this page, leaving the remaining default options.
+        
+        <p align="center"><img src="img/s3-create-bucket-final.png" alt="S3 Create Bucket Button image" width="90%" height="90%"></p>
+        
+        You should see the following in the S3 console upon successful creation:
+        
+        <p align="center"><img src="img/s3-bucket-created.png" alt="S3 Bucket Created image" width="90%" height="90%"></p> 
+  - title: Step 4. Create a Lambda Function to initiate an Export from Chargebee
     content: |-
         In this guide, we will be making use of the [Chargebee API](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2). The Chargebee API supports a number of programming languages. You'll want to make sure you select both the Product Catalog version that is relevant to the version of Chargebee you are using as well as your supported programming language of choice to make sure you are seeing the correct documentation for your environment. 
 
         ![Chargebee API Docs image](img/chargebee-api-docs.png)
         
         For the purpose of this tutorial, we will be using `Product Catalog 2.0` as the version and `Python` as the language.
-
+        
 ---
 
 > The contents of this tutorial are currently a work in progress.
@@ -72,11 +101,11 @@ This guide will walk you through one option for how you can build your own integ
   - It is recommended to follow the best practices of least privileges when assigning access to your API key.
 - Programming Fundamentals
 
->It is highly recommended that the steps followed in this guide are done in your Test environment in Chargebee and a development account in AWS.
+> It is highly recommended that the steps followed in this guide are done in your Test environment in Chargebee and a development account in AWS.
 
 ## Architecture Overview
 
-![Architecture Diagram](img/architecture.jpg)
+<p align="center"><img src="img/architecture.jpg" alt="Architecture Diagram" width="90%" height="90%"></p>
 
 The architecture for this guide is very straightforward. [AWS Lambda](https://aws.amazon.com/lambda/) will initiate an export API call to the Chargebee API. A secondary Lambda will download those files once they are ready. All of your exported Chargebee files will be stored in [Amazon S3](https://aws.amazon.com/s3/). [AWS Step Functions](https://aws.amazon.com/step-functions/) will orchestrate the entire workflow, and your Chargebee API key will be stored in (and referenced from) [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html). The parameter will be encrypted using [AWS Key Management Service](https://aws.amazon.com/kms/). An optional [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/eventbridge/latest/userguide/scheduler.html) can trigger the workflow on a scheduled basis.  
 
