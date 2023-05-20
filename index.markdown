@@ -6,7 +6,7 @@ layout: default
 
 accordion: 
   - title: Step 0. [Optional] Import Sample Data to Chargebee
-    content: You may already have sample data to work with in your Chargebee environment, and you are welcome to use that for this tutorial. If you do not have sample data, feel free to use the sample data provided in the `chargebee-sample-customer-data.csv` file that is included in this repository. Follow the steps found in Chargebee's [Bulk Operations documentation](https://www.chargebee.com/docs/2.0/bulk-operations.html) to pre-load this data before continuing on.
+    content: You may already have sample data to work with in your Chargebee environment, and you are welcome to use that for this tutorial. If you do not have sample data, feel free to use the sample data provided in the [chargebee-sample-customer-data.csv](https://github.com/toriancrane/chargebee-lambda-integration/blob/main/chargebee-sample-customer-data.csv) file. Follow the steps found in Chargebee's [Bulk Operations documentation](https://www.chargebee.com/docs/2.0/bulk-operations.html) to pre-load this data before continuing on.
   - title: Step 1. Select a Region
     content: This application can be deployed in any AWS region that supports all the services used in this application (see the Architecture Overview section). You can refer to the [region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) to see which regions support these services. For the purpose of this guide, we will be creating resources in the **US East (N. Virginia)** region. You can select this region from the dropdown in the upper right corner of the [AWS Management Console](https://console.aws.amazon.com/console/home).
   - title: Step 2. Create an AWS Systems Manager Parameter
@@ -184,9 +184,39 @@ accordion:
         You should see the following inline policy in the **Permissions policies** section of your IAM Role.
         
         <p align="center"><img src="img/iam-policy-created.png" alt="IAM Policy Created image" width="90%" height="90%"></p>
+  - title: Step 6. Create a Lambda Layer for your Lambda Functions
+    content: |-
+        [Lambda layers](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) are a convenient way to package libraries and other dependencies that you can use with your Lambda functions. For this particular integration, we will need the Chargebee API library as well as the [Requests](https://pypi.org/project/requests/) library.
+
+        In this step, we will upload a pre-made Lambda Layer that includes both the Chargebee and Requests libraries. Creating one from scratch is outside of the scope of this tutorial, but you can find more details about this process in the [Creating layer content](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-upload) section of the official AWS documentation.
+        
+        ---
+        
+        <br>
+        a. Download the [chargebee-requests-lambda-layer](https://github.com/toriancrane/chargebee-lambda-integration/blob/main/aws/chargebee-requests-lambda-layer.zip) from the application repo. In the AWS Management Console, navigate to the Lambda service and select the `Layers` link in the left hand menu. Then click the `Create layer` button on the right hand side.
+        
+        <p align="center"><img src="img/lambda-layer-create.png" alt="Create Lambda Layer image" width="90%" height="90%"></p>
         <br>
         
-  - title: Step 5. Create a Lambda Function to initiate an Export from Chargebee
+        b. On the **Create layer** page, provide a name for your Lambda Layer such as `chargebee-requests-lambda-layer`. With `Upload a .zip file` selected, click the `Upload` button and select the zip file downloaded in the previous step.
+        
+        <p align="center"><img src="img/lambda-layer-create-name.png" alt="Create Lambda Layer Name image" width="90%" height="90%"></p>
+        <br>
+        
+        c. Leave the remaining optional configurations blank.
+        
+        > You can learn more about these settings in the [Creating a layer](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-create) AWS documentation.
+        
+        Then click `Create`.
+        
+        <p align="center"><img src="img/lambda-layer-create-final.png" alt="Create Lambda Layer image" width="90%" height="90%"></p>
+        <br>
+        
+        You should see the following screen once the Lambda Layer has been successfully created.
+        
+        <p align="center"><img src="img/lambda-layer-created.png" alt="Create Lambda Layer image" width="90%" height="90%"></p>
+        
+  - title: Step 7. Create a Lambda Function to initiate an Export from Chargebee
     content: |-
         In this step, we will be making use of the [Chargebee API](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2) to build the core function that will initate the exporting of data from Chargebee. The Chargebee API supports a number of programming languages. You'll want to make sure you select both the Product Catalog version that is relevant to the version of Chargebee you are using as well as your supported programming language of choice to make sure you are seeing the correct documentation for your environment. 
 
@@ -208,7 +238,7 @@ accordion:
         <p align="center"><img src="img/lambda-create-function-name.png" alt="Lambda Create Function Name image" width="90%" height="90%"></p>
         <br>
         
-        c. Click the `Change default execution role` and ensure that the default option of `Create a new role with basic Lambda permissions` is selected. Then click the `Create function` button at the bottom right hand side of the page.
+        c. Click the `Change default execution role` and select `Use an existing role`. In the **Existing Role** dropwdown, select the IAM role you created in the previous step. Then click the `Create function` button at the bottom right hand side of the page.
         
         <p align="center"><img src="img/lambda-create-function-final.png" alt="Lambda Create Function Button image" width="90%" height="90%"></p>
         <br>

@@ -21,7 +21,7 @@
 title: Chargebee Integration with AWS
 email: toriancrane@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
-  A tutorial for creating a simple export integration between Chargebee and AWS.
+  © 2023, Torian Crane | A tutorial for creating a simple export integration between Chargebee and AWS.
 # baseurl: "" # the subpath of your site, e.g. /blog
 # url: "" # the base hostname & protocol for your site, e.g. http://example.com
 # twitter_username: jekyllrb
