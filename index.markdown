@@ -9,17 +9,17 @@ accordion:
     content: You may already have sample data to work with in your Chargebee environment, and you are welcome to use that for this tutorial. If you do not have sample data, feel free to use the sample data provided in the [chargebee-sample-customer-data.csv](https://github.com/toriancrane/chargebee-lambda-integration/blob/main/chargebee-sample-customer-data.csv) file. Follow the steps found in Chargebee's [Bulk Operations documentation](https://www.chargebee.com/docs/2.0/bulk-operations.html) to pre-load this data before continuing on.
   - title: Step 1. Select a Region
     content: This application can be deployed in any AWS region that supports all the services used in this application (see the Architecture Overview section). You can refer to the [region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) to see which regions support these services. For the purpose of this guide, we will be creating resources in the **US East (N. Virginia)** region. You can select this region from the dropdown in the upper right corner of the [AWS Management Console](https://console.aws.amazon.com/console/home).
-  - title: Step 2. Create an AWS Systems Manager Parameter
+  - title: Step 2. Create AWS Systems Manager Parameters
     content: |-
         AWS Systems Manager (SSM) Parameter Store provides the ability to securely store data such as passwords, database strings, and license codes as parameter values. 
 
-        In this step, you will use the AWS console to create an SSM Parameter that will store the value of the Chargebee API key. We will later reference this value in our Lambda script that will invoke the Chargebee API call.
+        In this step, you will use the AWS console to create SSM Parameters that will store the values of your Chargebee Site name and API key. We will later reference these values in our Lambda function code that will invoke the Chargebee API call.
         
         
         ---
         
         <br>
-        a. In the AWS Console, navigate to the AWS Systems Manager service. The click the `Parameter Store` link in the left hand menu.
+        a. In the AWS Console, navigate to the **AWS Systems Manager** service. The click the `Parameter Store` link in the left hand menu.
         
         <p align="center"><img src="img/ssm-console.png" alt="SSM Console image" width="90%" height="90%"></p>
         <br>
@@ -44,7 +44,7 @@ accordion:
         <p align="center"><img src="img/ssm-create-param-value.png" alt="SSM Parameter image" width="90%" height="90%"></p>
         <br>
         
-        You should see the following in the SSM Parameter Store console upon successful creation:
+        f. Repeat steps A through E to create another parameter and store the value of your Chargebee Site name. You should see the following in the SSM Parameter Store console upon successful creation of both parameters:
         
         <p align="center"><img src="img/ssm-param-created.png" alt="SSM Parameter Created image" width="90%" height="90%"></p>
   - title: Step 3. Create an S3 Bucket to store the export files
@@ -54,7 +54,7 @@ accordion:
         ---
         
         <br>
-        a. In the AWS Management Console, navigate to the S3 service. Then click the `Create bucket` button on the right hand side of the screen.
+        a. In the AWS Management Console, navigate to the **S3** service. Then click the `Create bucket` button on the right hand side of the screen.
         
         <p align="center"><img src="img/s3-create-bucket.png" alt="S3 Create Bucket image" width="90%" height="90%"></p>
         <br>
@@ -88,7 +88,7 @@ accordion:
         
         <br>
         
-        a. In the AWS Management Console, navigate to the IAM service. Then click the `Roles` link in the left hand menu.
+        a. In the AWS Management Console, navigate to the **IAM** service. Then click the `Roles` link in the left hand menu.
         
         <p align="center"><img src="img/iam-create-role.png" alt="IAM Create Role image" width="90%" height="90%"></p>
         <br>
@@ -216,24 +216,26 @@ accordion:
         
         <p align="center"><img src="img/lambda-layer-created.png" alt="Create Lambda Layer image" width="90%" height="90%"></p>
         
-  - title: Step 7. Create a Lambda Function to initiate an Export from Chargebee
+  - title: Step 7. Create Lambda Functions to initiate and download an Export from Chargebee
     content: |-
-        In this step, we will be making use of the [Chargebee API](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2) to build the core function that will initate the exporting of data from Chargebee. The Chargebee API supports a number of programming languages. You'll want to make sure you select both the Product Catalog version that is relevant to the version of Chargebee you are using as well as your supported programming language of choice to make sure you are seeing the correct documentation for your environment. 
+        In this step, we will be making use of the [Chargebee API](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2) to build the core functionality of exporting of data from Chargebee and storing it in AWS. The Chargebee API supports a number of programming languages. You'll want to make sure you select both the Product Catalog version that is relevant to the version of Chargebee you are using as well as your supported programming language of choice to make sure you are seeing the correct documentation for your environment. 
 
         <p align="center"><img src="img/chargebee-api-docs.png" alt="Chargebee API Docs image" width="90%" height="90%"></p>
         <br>
         
         For the purpose of this tutorial, we will be using the `Product Catalog 2.0` version and the `Python` language of the documentation, and we will be specifically making use of the [Export Customers API](https://apidocs.chargebee.com/docs/api/exports?prod_cat_ver=2#export_customers).
         
+        We will be creating a total of two lambda functions, one that will initiate the export from Chargebee, and one that will download the data once the export is ready for download.
+        
          ---
         
         <br>
-        a. In the AWS Management Console, navigate to the Lambda service. Then click the `Create function` button on the top right side of the screen.
+        a. In the AWS Management Console, navigate to the **Lambda** service. Then click the `Create function` button on the top right side of the screen.
         
         <p align="center"><img src="img/lambda-create-function.png" alt="Lambda Create Function image" width="90%" height="90%"></p>
         <br>
         
-        b. On the **Create function** page, provide a unique name for your Lambda function such as `chargebee-export-function`. Under **Runtime**, select the latest supported `Python` runtime (make sure it matches the same runtime as the one that was selected during the Lambda Layer creation process). Leave the default value selected under **Architecture**.
+        b. On the **Create function** page, provide a unique name for the first "export" Lambda function such as `chargebee-export-function`. Under **Runtime**, select the latest supported `Python` runtime (make sure it matches the same runtime as the one that was selected during the Lambda Layer creation process). Leave the default value selected under **Architecture**.
         
         <p align="center"><img src="img/lambda-create-function-name.png" alt="Lambda Create Function Name image" width="90%" height="90%"></p>
         <br>
@@ -253,9 +255,38 @@ accordion:
         <p align="center"><img src="img/lambda-add-layer-config.png" alt="Lambda Add Layer Configuration image" width="90%" height="90%"></p>
         <br>
         
-        f. TBD
+        f. In the **Code Source** section of the lambda function, copy and paste the code in [this file](https://github.com/toriancrane/chargebee-lambda-integration/blob/main/aws/lambda/export.py) into `lambda_function.py`. Then click `Deploy`.
+        
+        <p align="center"><img src="img/lambda-add-code.png" alt="Lambda Add Export Code image" width="90%" height="90%"></p>
+        <br>
+        
+        g. Repeat steps A through F in this section for the second "download" lambda function. (Make sure to provide a unique name for it such as `chargebee-download-function`). Use the code provided in [this file](https://github.com/toriancrane/chargebee-lambda-integration/blob/main/aws/lambda/download.py) for the contents of this lambda function.
+        
+        <p align="center"><img src="img/lambda-add-code-2.png" alt="Lambda Add Download Code image" width="90%" height="90%"></p>
+        <br>
+  - title: Step 8. Create a State Machine to Orchestrate the Chargebee Export Workflow
+    content: |-
+        Now that we have all of our core resources created, this next step will bring the entire workflow together in an organized and procedural way. We will do this by leveraging [AWS Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html), a serverless visual orchestration service.
+
+        ---
+        
+        <br>
+        a. In the AWS Management Console, navigate to the **Step Functions** service and click the `State machines` link in the left hand menu. Then click `Create state machine`.
+        
+        <p align="center"><img src="img/state-machine-create.png" alt="Create State Machine image" width="90%" height="90%"></p>
+        <br>
+        
+        b. In the **Choose authoring method** page, keep the default value of `Design your workflow visually`, and keep the default value of `Standard` under the **Type** section. Then click `Next`.
+        
+        > Defining your orchestration workflow as code is outside of the scope of this guide, but you can refer to the [Amazon States Language](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html) for more information on this topic.
+        
+        <p align="center"><img src="img/state-machine-authoring-method.png" alt="State Machine Configuration image" width="90%" height="90%"></p>
+        <br>
         
         
+        c. The next page is where you will design the workflow as shown in the `AWS Step Functions workflow` part of architecture diagram.
+        
+        <p align="center"><img src="img/architecture-workflow-highlight.png" alt="Architecture Diagram" width="80%" height="80%"></p>
 ---
 
 > The contents of this tutorial are currently a work in progress.
