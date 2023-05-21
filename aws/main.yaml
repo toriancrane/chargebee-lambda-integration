@@ -197,6 +197,7 @@ Resources:
 
   rExportLambda:
     Type: AWS::Lambda::Function
+    DependsOn: [ rLambdaLayer ]
     Properties:
       Description: Initiates a Chargebee export and returns a download URL
       FunctionName: export-from-chargebee
@@ -291,6 +292,7 @@ Resources:
   
   rDownloadLambda:
     Type: AWS::Lambda::Function
+    DependsOn: [ rLambdaLayer ]
     Properties:
       Description: Downloads the Chargbee Export zip file and stores the CSVs in S3
       FunctionName: download-from-chargebee
