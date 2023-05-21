@@ -1,8 +1,5 @@
 
 # Chargebee Integration with AWS Lambda
-
-> The contents of this repository is currently a work in progress.
-
 [Chargebee](https://www.chargebee.com/) is a recurring billing and subscription management tool that helps subscription businesses streamline their Revenue Operations. It offers a variety of functionality, including:
 - Managing recurring billing and subscriptions seamlessly
 - Supporting hybrid business models
