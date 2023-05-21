@@ -265,6 +265,16 @@ accordion:
     content: |-
         Now that we have all of our core resources created, this next step will bring the entire workflow together in an organized and procedural way. We will do this by leveraging [AWS Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html), a serverless visual orchestration service.
 
+        In this step, we will create a **State Machine** that will organize our workflow in a series of **Steps** that we define. The **State Machine** accepts a JSON object as input, and we will be using the following input object for ours:
+        
+        <pre>
+        {
+          "Status": "", # The current status of the export workflow
+          "ExportId": "", # The Export ID that Chargebee will provide
+          "Url": "" # The download URL that Chargebee will provide
+        }
+        </pre>
+        
         ---
         
         <br>
@@ -292,11 +302,89 @@ accordion:
         <br>
         
         The first step we will add to our workflow is the "Export" lambda function we created in a previous step. We will do this by dragging and dropping the `AWS Lambda Invoke` action from the left menu into the designer form space.
+        
         <p align="center">
             <video autoplay loop muted height="90%" width="90%">
             	<source src="video/add-export-lambda-invoke.mp4" type="video/mp4">
             </video>
         </p>
+        <br>
+        
+        d. Next, we will add a **Wait** step. The purpose of this step is to wait a short period of time so that Chargebee has time to prepare the files to be exported and generate the download URL. To do this, type in **"Wait"** in the search field on the left hand side, and drag and drop the action under the Lambda Invoke from the previous step.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/add-wait-state.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        e. After the **Wait** step, we want to add our second "download" lambda which will run after the conditions of the **Wait** step are met. We will later add a **Fail** state in case something goes wrong during the **Export** step, a **Success** state for when the entire workflow completes without error, and a **Choice** state to help the workflow decide between the previous two.
+        
+        For now, just repeat the same steps to drag and drop another Lambda step and place it under the **Wait** step. 
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/add-download-lambda-invoke.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        Now that we have some of the core pieces of our workflow added, we need to add the workflow configurations. 
+        
+        f. Let's start with the first **Lambda Invoke**. Select this item in the designer and give it a more descriptive name such as `Chargebee Exporter Lambda`. 
+        
+        Then under the **Function Name** section, we will search for the name of the corresponding Lambda function that we created earlier in this guide (e.g `chargebee-export-function`). 
+        
+        Scroll further down until you see the **Next state** section, keeping all of the default values along the way. Validate that the value of this drowndown is **Wait**. This is telling the service that once this Lambda has finished running, send it to the **Wait** step.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/configure-export-lambda-invoke.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        Repeat the same process for the second Lambda in the workflow, adding a descriptive name such as `Chargebee Downloader Lambda` and selecting the corresponding lambda function (e.g. `chargebee-download-function`). For this Lambda, leave the default value of `Go to end` in the **Next state** section.
+        
+        g. The next step in the workflow is the **Wait** step. If we click this step in the designer, we can see the configuration options for this state. Under **Options**, we are able to define our wait to happen at a fixed interval or on a specific date and time. 
+        
+        For the purpose of this tutorial, we will leave the default `Wait for a fixed interval` selected. Under the **Seconds** section, we will keep the default value of `Enter seconds` in the dropdown, and change our wait time to `10` seconds.
+        
+        > If you have a lot of data in your environment, you can set your wait time to a longer period to reduce the amount of repetitions this state will run.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/configure-wait-state-time.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        h. If we scroll down to the **Next state** section, we will see that it is configured by default to go to our second Lambda Invoke. We want the workflow to check the status of our Export first before deciding if it's okay to send to this Lambda function.
+        
+        To do this, we will add a **Choice** step to the workflow. Search for it in the search box and drag and drop it underneath the **Wait** step. Then if you click the **Wait state** item again, you should see that the **Next state** section now goes to the **Choice state** we just added.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/add-choice-step.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        h. Now let's configure the **Choice state**. If we click on this item, we can see under the **Choice Rules** section that this state let's us define if-else logic to determine which state the workflow should transition to next.
+        
+        For our workflow, we want to transition to the `Chargebee Downloader Lambda` step if the value of **Status** in our input object is `completed`. We want to transition it back to the `Chargebee Exporter Lambda` if **Status** is `in-progress`. If there is any other value besides `completed` or `in-progress` in **Status**, then it most likely means there was an issue and we want to stop the State Machine with an error. 
+        
+        Let's start by setting this error logic as our **Default Rule**. We first have to search for the **Fail** action in the search bar and drag and drop it into our workflow. You can drop it into the **Rule #1** space for now as we will correct this in the **Choice State** configuration.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/add-fail-state.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        g. Let's go back and configure the **Choice state**.
                 
 ---
 
