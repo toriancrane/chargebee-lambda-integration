@@ -30,6 +30,8 @@ Chargebee also offers native reporting functionality, but there may be times whe
 
 ![Architecture Diagram](low-level-diagram.jpg)
 
+<p align="center"><img src="img/low-level-diagram.jpg" alt="Architecture Diagram" width="70%" height="70%"></p>
+
 The architecture for this solution is very straightforward. [AWS Lambda](https://aws.amazon.com/lambda/) will initiate an export API call to the Chargebee API. A secondary Lambda will download those files once they are ready. All of your exported Chargebee files will be stored in [Amazon S3](https://aws.amazon.com/s3/). [AWS Step Functions](https://aws.amazon.com/step-functions/) will orchestrate the entire workflow, and your Chargebee API key will be stored in (and referenced from) [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html). The parameter will be encrypted using [AWS Key Management Service](https://aws.amazon.com/kms/). An optional [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/eventbridge/latest/userguide/scheduler.html) can trigger the workflow on a scheduled basis.
 
 ## Step-by-Step Tutorial
