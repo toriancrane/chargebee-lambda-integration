@@ -197,7 +197,6 @@ Resources:
 
   rExportLambda:
     Type: AWS::Lambda::Function
-    DependsOn: [ rLambdaLayer ]
     Properties:
       Description: Initiates a Chargebee export and returns a download URL
       FunctionName: export-from-chargebee
@@ -223,7 +222,7 @@ Resources:
             ssm_client = boto3.client('ssm')
 
             API_PARAM_NAME = os.environ['API_PARAM_NAME']
-            SITE_PARAM_NAME = os.environ['API_SITE_NAME']
+            SITE_PARAM_NAME = os.environ['SITE_PARAM_NAME']
 
             def lambda_handler(event, context):
 
@@ -293,7 +292,6 @@ Resources:
   
   rDownloadLambda:
     Type: AWS::Lambda::Function
-    DependsOn: [ rLambdaLayer ]
     Properties:
       Description: Downloads the Chargbee Export zip file and stores the CSVs in S3
       FunctionName: download-from-chargebee
