@@ -9,31 +9,34 @@ Metadata:
         Parameters: 
           - pChargebeeSiteName
           - pChargebeeApiKey
+          - pChargebeeBucketName
       - 
         Label: 
-          default: "AWS Configuration"
+          default: "Lambda Layer Configuration"
         Parameters: 
-          - pBucketName
-          - pLambdaLayerArn
+          - pLambdaLayerBucketName
+          - pLambdaLayerObjectKey
     ParameterLabels: 
       pChargebeeSiteName: 
         default: "Chargebee Site Name"
       pChargebeeApiKey: 
         default: "Chargebee API Key"
-      pBucketName: 
+      pChargebeeBucketName: 
         default: "S3 Bucket Name"
-      pLambdaLayerArn: 
-        default: "Lambda Layer ARN"
+      pLambdaLayerBucketName:
+        default: "S3 Bucket Name"
+      pLambdaLayerObjectKey:
+        default: "S3 Object Key
 
 Parameters:
-  pBucketName:
+  pChargebeeBucketName:
     Type: String
-    Default: sap-tap-farms-exports
+    Default: ""
     Description: The name to give your S3 Bucket that will store the exported files
 
   pChargebeeSiteName:
     Type: String
-    Default: saptapfarms-test
+    Default: ""
     Description: The name of your Chargebee site
     NoEcho: true
 
@@ -41,11 +44,16 @@ Parameters:
     Type: String
     Description: The value of your Chargebee API Key
     NoEcho: true
-
-  pLambdaLayerArn:
+    
+  pLambdaLayerBucketName:
     Type: String
-    Description: The ARN of the Lambda layer that has the Chargebee and Requests modules installed
     Default: ""
+    Description: The name of the S3 bucket that holds the lambda layer zip file
+    
+  pLambdaLayerObjectKey:
+    Type: String
+    Default: "(ex: chargebee-requests-lambda-layer.zip)"
+    Description: The name of the S3 object key of the lambda layer zip file
 
 Resources:
 
@@ -126,19 +134,18 @@ Resources:
 #############################
 ####### S3 Resources ########
 #############################
-
   rS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Ref pBucketName
+      BucketName: !Ref pChargebeeBucketName
       Tags:
         - Key: Name
-          Value: !Ref pBucketName
+          Value: !Ref pChargebeeBucketName
 
   rS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties: 
-      Bucket: !Ref pBucketName
+      Bucket: !Ref pChargebeeBucketName
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -155,32 +162,39 @@ Resources:
 #############################
 ######## SSM Resources ######
 #############################
+---
+Resources:
   rChargebeeApiParam:
     Type: AWS::SSM::Parameter
-    Properties: 
-      Description: String
+    Properties:
       Name: chargebee-apikey
-      Policies: String
-      Tags: Json
-      Tier: String
       Type: String
-      Value: String
+      Value: !Ref pChargebeeApiKey
+      Description: SSM Parameter to store the value of the Chargebee API key.
       
   rChargebeeSiteParam:
     Type: AWS::SSM::Parameter
-    Properties: 
-      Description: String
+    Properties:
       Name: chargebee-sitename
-      Policies: String
-      Tags: Json
-      Tier: String
       Type: String
-      Value: String
+      Value: !Ref pChargebeeSiteName
+      Description: SSM Parameter to store the value of the Chargebee Site Name.
 
 
 #############################
 ###### Lambda Resources #####
 #############################
+  rLambdaLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.10
+      Content:
+        S3Bucket: !Ref pLambdaLayerBucketName
+        S3Key: !Ref pLambdaLayerObjectKey
+      Description: Lambda layer for the Chargebee and Requests libraries
+      LayerName: chargebee-requests-lambda-layer
+      LicenseInfo: MIT
 
   rExportLambda:
     Type: AWS::Lambda::Function
@@ -192,7 +206,7 @@ Resources:
       Runtime: python3.10
       Role: !GetAtt 'rLambdaRole.Arn'
       Layers: 
-        - !Ref pLambdaLayerArn
+        - !Ref rLambdaLayer
       Timeout: 60
       Environment:
         Variables:
@@ -207,8 +221,8 @@ Resources:
 
             ssm_client = boto3.client('ssm')
 
-            API_PARAM_NAME = "chargebee-apikey"
-            SITE_PARAM_NAME = "chargebee-sitename"
+            API_PARAM_NAME = os.environ['API_PARAM_NAME']
+            SITE_PARAM_NAME = os.environ['API_SITE_NAME']
 
             def lambda_handler(event, context):
 
@@ -271,9 +285,9 @@ Resources:
                 return export_id
 
             def get_export_status(export_id):
-
                 result = chargebee.Export.retrieve(export_id)
                 export = result.export
+                
                 return export
   
   rDownloadLambda:
@@ -286,11 +300,11 @@ Resources:
       Runtime: python3.10
       Role: !GetAtt 'rLambdaRole.Arn'
       Layers: 
-        - !Ref pLambdaLayerArn
+        - !Ref rLambdaLayer
       Timeout: 60
       Environment:
         Variables:
-          BUCKET_NAME: !Ref pBucketName
+          BUCKET_NAME: !Ref pChargebeeBucketName
       Code:
         ZipFile: |
             import requests
@@ -328,6 +342,9 @@ Resources:
                 
                 return event
 
+############################
+## Event Bridge Resources ###
+############################
   rEventScheduler:
     Type: AWS::Scheduler::Schedule
     DependsOn: [ rStateMachine ]
@@ -335,7 +352,7 @@ Resources:
       Description: Cron job that triggers the export process
       FlexibleTimeWindow: 
         Mode: "OFF"
-      State: ENABLED
+      State: DISABLED
       ScheduleExpression: cron(0 1 ? * MON *)
       ScheduleExpressionTimezone: America/New_York
       Target: 
@@ -348,8 +365,6 @@ Resources:
           }
         RoleArn: !GetAtt rStatesTriggerRole.Arn
 
-
-
 #############################
 ####### State Machine #######
 #############################
@@ -357,7 +372,7 @@ Resources:
   rStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
-      StateMachineName: SapTapFarmsExporter-StateMachine
+      StateMachineName: ChargebeeExporter-StateMachine
       DefinitionSubstitutions:
         ExportFunction: !GetAtt rExportLambda.Arn
         DownloadFunction: !GetAtt rDownloadLambda.Arn
@@ -400,7 +415,7 @@ Resources:
                 {
                   "Variable": "$.Status",
                   "StringEquals": "completed",
-                  "Next": "Lambda Invoke"
+                  "Next": "Chargebee Downloader"
                 },
                 {
                   "Variable": "$.Status",
@@ -410,7 +425,7 @@ Resources:
               ],
               "Default": "Fail"
             },
-            "Lambda Invoke": {
+            "Chargebee Downloader": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "OutputPath": "$.Payload",
