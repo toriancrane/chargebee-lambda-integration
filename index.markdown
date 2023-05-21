@@ -261,7 +261,7 @@ accordion:
         
         <p align="center"><img src="img/lambda-add-code-2.png" alt="Lambda Add Download Code image" width="90%" height="90%"></p>
         <br>
-  - title: Step 8. Create a State Machine to Orchestrate the Chargebee Export Workflow
+  - title: Step 9. Create a State Machine to Orchestrate the Chargebee Export Workflow
     content: |-
         Now that we have all of our core resources created, this next step will bring the entire workflow together in an organized and procedural way. We will do this by leveraging [AWS Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html), a serverless visual orchestration service.
 
@@ -371,9 +371,9 @@ accordion:
         </p>
         <br>
         
-        h. Now let's configure the **Choice state**. If we click on this item, we can see under the **Choice Rules** section that this state let's us define if-else logic to determine which state the workflow should transition to next.
+        i. Now let's configure the **Choice state**. If we click on this item, we can see under the **Choice Rules** section that this state let's us define if-else logic to determine which state the workflow should transition to next.
         
-        For our workflow, we want to transition to the `Chargebee Downloader Lambda` step if the value of **Status** in our input object is `completed`. We want to transition it back to the `Chargebee Exporter Lambda` if **Status** is `in-progress`. If there is any other value besides `completed` or `in-progress` in **Status**, then it most likely means there was an issue and we want to stop the State Machine with an error. 
+        For our workflow, we want to transition to the `Chargebee Downloader Lambda` step if the value of **Status** in our input object is `completed`. We want to transition it back to the `Chargebee Exporter Lambda` if **Status** is `in-progress`. If there is any other value besides `completed` or `in-progress` in **Status**, then it most likely means there was an issue and we want to stop the State Machine with an error and skip running the `Chargebee Downloader Lambda` step. 
         
         Let's start by setting this error logic as our **Default Rule**. We first have to search for the **Fail** action in the search bar and drag and drop it into our workflow. You can drop it into the **Rule #1** space for now as we will correct this in the **Choice State** configuration.
         
@@ -384,8 +384,140 @@ accordion:
         </p>
         <br>
         
-        g. Let's go back and configure the **Choice state**.
-                
+        j. Let's go back and configure the **Choice state**. Scroll down to the **Choice Rules** section and click the edit icon on the right side of **Rule #1**. We are presented with the configuration options for this rule. 
+        
+        Our Rule #1 will be to tell the workflow to go our download lambda when the status is `completed`. Click the `Add Conditions` button which will pop up a "Conditions" modal that we can configure to evaluate the value of our JSON input object. 
+        
+        Keep the default value of `Simple` in the first dropdown, and validate that the value under the **Not** dropdown is empty. Under **Variable**, provide `$.Status` as the value.
+        
+        > See [Input and Output Processing in Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-input-output-filtering.html) for more information on why we are using this syntax to reference the value of our `Status` parameter.
+        
+        Under the **Operator** dropdown, select `is equal to`, and under the **Value** dropdown, select `String constant`. In the last box, type in `completed`. Then click `Save conditions`.
+        
+        Scroll down until you see the **Then next state is** section, and select `Chargebee Downloader Lambda` from the list.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/configure-choice-state-completed.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        k. Scroll down and click the `+ Add new choice rule` button. Repeat the same steps to add the `in-progress` condition, and set the **Then next state is** section to the `Chargebee Exporter Lambda`.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/configure-choice-state-inprogress.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        l. To complete the **Choice state** configuration, set the **Default** rule to target the **Fail** step.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/configure-choice-state-default.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        m. For the last part of this section, we will add a **Success** state after the `Chargebee Downloader Lambda` that will stop the State Machine and mark the workflow as a success. Search for the **Success** action in the search bar, then drag and drop it under the `Chargebee Downloader Lambda` step in the designer.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/add-success-step.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        n. At this point, we now have our State Machine fully defined. If you click the `Next` button, you will be taken to a page where you can see your workflow design as code (similar to the below image). You can take some time to review the code definition before moving onto the next step.
+        
+        <p align="center"><img src="img/state-machine-code-definition.png" alt="State Machine Code Definition image" width="90%" height="90%"></p>
+        <br>
+        
+        o. Scroll down and click the `Next` button again. This will take us to the final configuration settings for our State Machine.
+        
+        Let's give our State Machine a descriptive name such as `ChargebeeExportStateMachine`.
+        
+        Under the **Permissions** section, keep the default value of `Create new role` selected. The **Step Functions** service will generate a new IAM role on our behalf based on how we have defined our State Machine. You will be able to see the name of the role that will be created as well as the permissions that will be added in the blue information callout at the bottom of this page.
+        
+        > You have the ability to customize this role or create your own role should your State Machine definition change in the future. See the [Creating an IAM role for your state machine](https://docs.aws.amazon.com/step-functions/latest/dg/procedure-create-iam-role.html) documentation for more details.
+        
+        Under the **Logging** section, we can set our desired logging level. It is highly recommended to [configure logging for your State Machine](https://docs.aws.amazon.com/step-functions/latest/dg/monitoring-logging.html) as it is important for things like monitoring performance and debugging. For the purpose of this tutorial, we will select the `ALL` option.
+        
+        Then click `Create state machine`.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/configure-state-machine.mp4" type="video/mp4">
+            </video>
+        </p>
+  - title: Step 10. Validate the End-to-End Workflow
+    content: |-
+        Now that we have created all of our integration components, we should be able to trigger the workflow and successfully export data from Chargebee. We will validate that everything is working as expected by executing our State Machine.
+
+        ---
+        
+        a. Click the `Start execution` button. On the **Start execution** modal that pops up, you can provide a custom name for the execution run or leave the default auto-generated value. Under the **Input** section, copy and paste our input object into the text box:
+        
+        <pre>
+        {
+          "Status": "",
+          "ExportId": "",
+          "Url": ""
+        }
+        </pre>
+        
+        Then click `Start execution`.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/new-state-machine-execution.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        b. We will be directed to the [**Execution Details**](https://docs.aws.amazon.com/step-functions/latest/dg/exec-details-interface-overview.html) page which shows the details for all in-progress and past State Machines executions. 
+        
+        If we scroll down to the **Graph View** section, we can see a graphical representation of the execution workflow that helps us keep track of the execution status. From this view, we can choose any step in the workflow to view details about its execution in the **Step details** component.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/state-machine-execution-progress.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        Scrolling further down the page, under the **Events** section we can see a list of events associated with the execution history similar to the below image:
+        
+        <p align="center"><img src="img/state-machine-events.png" alt="State Machine Events image" width="90%" height="90%"></p>
+        <br>
+        
+        c. To verify that the workflow was successful, navigate to the S3 service and click on the name of the S3 Bucket we created in an earlier step (e.g. `chargebee-to-aws-workshop`).
+        
+        If you click on the `exports` folder, you should see a series of CSV files related to the export query we made earlier in the tutorial.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/validate-chargebee-file-export.mp4" type="video/mp4">
+            </video>
+        </p>
+        <br>
+        
+        d. We have validated that the Chargebee files were successfully exported and downloaded into S3. Now we need to check that our failure use case also works as expected. We will do this by running a new execution with an input object that will simulate an error from our Exporter Lambda. Copy and paste the following code into a new execution:
+        
+        <pre>
+        {
+          "Status": "error",
+          "ExportId": "",
+          "Url": ""
+        }
+        </pre>
+        
+        Earlier we configured our **Choice state** to trigger a failure in the State Machine if the value of the `Status` parameter was anything other than `in-progress` or `completed`. With the above input object, the State Machine should fail at the **Choice state**. We will see something like the below image:
+        
+        <p align="center"><img src="img/state-machine-fail.png" alt="State Machine Events image" width="90%" height="90%"></p>
+        <br>
 ---
 
 > The contents of this tutorial are currently a work in progress.
