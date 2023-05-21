@@ -218,6 +218,7 @@ Resources:
             import boto3
             from botocore.exceptions import ClientError
             import chargebee
+            import os
 
             ssm_client = boto3.client('ssm')
 
