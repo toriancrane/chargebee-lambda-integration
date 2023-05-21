@@ -307,6 +307,19 @@ Resources:
           BUCKET_NAME: !Ref pChargebeeBucketName
       Code:
         ZipFile: |
+            import requests
+            import json
+            import boto3
+            import zipfile
+            import io
+            import os
+
+            s3_resource = boto3.resource('s3')
+            s3_client = boto3.client('s3')
+
+            BUCKET_NAME = os.environ['BUCKET_NAME']
+            FOLDER_NAME = 'exports'
+
             def lambda_handler(event, context):
 
                 print("Download started...")
