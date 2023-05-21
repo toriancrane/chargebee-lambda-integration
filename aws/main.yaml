@@ -22,11 +22,11 @@ Metadata:
       pChargebeeApiKey: 
         default: "Chargebee API Key"
       pChargebeeBucketName: 
-        default: "S3 Bucket Name"
+        default: "Chargebee Bucket Name"
       pLambdaLayerBucketName:
-        default: "S3 Bucket Name"
+        default: "Lambda Layer Bucket Name"
       pLambdaLayerObjectKey:
-        default: "S3 Object Key"
+        default: "Lambda Layer Object Key"
 
 Parameters:
 
