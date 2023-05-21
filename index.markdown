@@ -8,18 +8,17 @@ accordion:
   - title: Step 0. [Optional] Import Sample Data to Chargebee
     content: You may already have sample data to work with in your Chargebee environment, and you are welcome to use that for this tutorial. If you do not have sample data, feel free to use the sample data provided in the [chargebee-sample-customer-data.csv](https://github.com/toriancrane/chargebee-lambda-integration/blob/main/chargebee-sample-customer-data.csv) file. Follow the steps found in Chargebee's [Bulk Operations documentation](https://www.chargebee.com/docs/2.0/bulk-operations.html) to pre-load this data before continuing on.
   - title: Step 1. Select a Region
-    content: This application can be deployed in any AWS region that supports all the services used in this application (see the Architecture Overview section). You can refer to the [region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) to see which regions support these services. For the purpose of this guide, we will be creating resources in the **US East (N. Virginia)** region. You can select this region from the dropdown in the upper right corner of the [AWS Management Console](https://console.aws.amazon.com/console/home).
+    content: This application can be deployed in any AWS region that supports all the services used in this application (see the Architecture Overview section). We can refer to the [region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) to see which regions support these services. For the purpose of this guide, we will be creating resources in the **US East (N. Virginia)** region. We can select this region from the dropdown in the upper right corner of the [AWS Management Console](https://console.aws.amazon.com/console/home).
   - title: Step 2. Create AWS Systems Manager Parameters
     content: |-
         AWS Systems Manager (SSM) Parameter Store provides the ability to securely store data such as passwords, database strings, and license codes as parameter values. 
 
-        In this step, you will use the AWS console to create SSM Parameters that will store the values of your Chargebee Site name and API key. We will later reference these values in our Lambda function code that will invoke the Chargebee API call.
-        
+        In this step, we will use the AWS console to create SSM Parameters that will store the values of our Chargebee Site name and API key. We will later reference these values in our Lambda function code that will invoke the Chargebee API call.
         
         ---
         
         <br>
-        a. In the AWS Console, navigate to the **AWS Systems Manager** service. The click the `Parameter Store` link in the left hand menu. Then click `Create parameter`.
+        a. In the AWS Console, navigate to the **AWS Systems Manager** service. Click the `Parameter Store` link in the left hand menu. Then click `Create parameter`.
         
         <p align="center">
             <video autoplay loop muted height="90%" width="90%">
@@ -28,11 +27,11 @@ accordion:
         </p>
         <br>
         
-        b. On the **Create parameter** page, provide a unique name for your parameter. For the purpose of this guide, we will use `chargebee-apikey` as the name. Keep the default Tier of `Standard` selected.
+        b. On the **Create parameter** page, let's provide a unique name for our parameter. For the purpose of this guide, we will use `chargebee-apikey` as the name. Keep the default Tier of `Standard` selected.
         
         c. Under **Type**, select the `SecureString` radio button. This will apply encryption to the value that is stored in the parameter. Under the **KMS Key ID** section, a default KMS key will auto-populate. This will be the key that is used to encrypt the parameter data.
         
-        d. In the **Value** text box, enter the value of your Chargebee API key. Then click the `Create parameter` button to create your parameter.
+        d. In the **Value** text box, we can enter the value of our Chargebee API key, then click the `Create parameter` button to create the parameter.
         
         <p align="center">
             <video autoplay loop muted height="90%" width="90%">
@@ -41,39 +40,36 @@ accordion:
         </p>
         <br>
         
-        e. Repeat steps A through E to create another parameter and store the value of your Chargebee Site name. You should see the following in the SSM Parameter Store console upon successful creation of both parameters:
+        e. Repeat steps A through E to create another parameter and store the value of the Chargebee Site name. By the end of these steps, we will have created two SSM Parameters as shown in the following image:
         
         <p align="center"><img src="img/ssm-param-created.png" alt="SSM Parameter Created image" width="90%" height="90%"></p>
-  - title: Step 3. Create an S3 Bucket to store the export files
+  - title: Step 3. Create an S3 Bucket to Store the Export Files
     content: |-
-        In this step, you'll create a new S3 bucket that will be used to hold all of the downloaded Chargebee files.
+        In this step, we'll create a new S3 bucket that will be used to hold all of the downloaded Chargebee files.
         
         ---
         
         <br>
         a. In the AWS Management Console, navigate to the **S3** service. Then click the `Create bucket` button on the right hand side of the screen.
         
-        <p align="center"><img src="img/s3-create-bucket.png" alt="S3 Create Bucket image" width="90%" height="90%"></p>
-        <br>
-        
-        b. On the **Create bucket** page, provide a globally unique name for your bucket such as `chargebee-to-aws-workshop`. If you get an error that your bucket name already exists, try adding additional numbers or characters until you find an unused name. Also, make sure the Region you've chosen to use for this workshop is selected in the dropdown.
-        
-        <p align="center"><img src="img/s3-create-bucket-name.png" alt="S3 Create Bucket Name image" width="90%" height="90%"></p>
-        <br>        
+        b. On the **Create bucket** page, provide a globally unique name for the bucket such as `chargebee-to-aws-tutorial`. 
+
+        > If you get an error that your bucket name already exists, try adding additional numbers or characters until you find an unused name. Also, make sure the Region you've chosen to use for this workshop is selected in the dropdown.
 
         c. Choose `Create` in the lower left corner of this page, leaving the remaining default options.
         
-        <p align="center"><img src="img/s3-create-bucket-final.png" alt="S3 Create Bucket Button image" width="90%" height="90%"></p>
+        Our newly created bucket will be visible the S3 console upon successful creation.
         
-        You should see the following in the S3 console upon successful creation:
-        
-        <p align="center"><img src="img/s3-bucket-created.png" alt="S3 Bucket Created image" width="90%" height="90%"></p>
-        
-  - title: Step 4. Create an IAM Role for your Lambda Functions
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/s3-create-new-bucket.mp4" type="video/mp4">
+            </video>
+        </p>
+  - title: Step 4. Create an IAM Role for the Lambda Functions
     content: |-
-        In this step, we will create a Lambda Execution role for our Lambda functions. This role defines what other AWS services the function is allowed to interact with (see [Lambda Execution Role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)).
+        In this step, we will create an IAM Lambda Execution role for our Lambda functions. This role defines what other AWS services the function is allowed to interact with (see [Lambda Execution Role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)).
         
-        For the purposes of this workshop, we'll need to create an IAM role that grants your Lambda functions the following permissions:
+        For the purposes of this workshop, we'll need to create an IAM role that grants our Lambda functions the following permissions:
         
         a. write logs to Amazon CloudWatch Logs
         
@@ -85,27 +81,22 @@ accordion:
         
         <br>
         
-        a. In the AWS Management Console, navigate to the **IAM** service. Then click the `Roles` link in the left hand menu.
+        a. In the AWS Management Console, navigate to the **IAM** service. Click the `Roles` link in the left hand menu, then click the `Create role` button.
         
-        <p align="center"><img src="img/iam-create-role.png" alt="IAM Create Role image" width="90%" height="90%"></p>
+        b. In the **Select trusted entity** page, keep the default selection of `AWS Service`.
+        
+        c. Under the **Use case** section further down the page, select the radio button next to `Lambda`. Then click the `Next` button.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/iam-create-new-role-start.mp4" type="video/mp4">
+            </video>
+        </p>
         <br>
         
-        b. Then click the `Create role` button.
+        d. On the **Add permissions** page, under the **Permissions policies** section, search for and select the following Policy names:
         
-        <p align="center"><img src="img/iam-create-role-button.png" alt="IAM Create Role image" width="90%" height="90%"></p>
         <br>
-        
-        c. In the **Select trusted entity** page, keep the default selection of `AWS Service`.
-        
-        <p align="center"><img src="img/iam-create-role-trust.png" alt="IAM Create Role image" width="90%" height="90%"></p>
-        <br>
-        
-        d. Under the **Use case** section further down the page, select the radio button next to `Lambda`. Then click the `Next` button.
-        
-        <p align="center"><img src="img/iam-create-role-use-case.png" alt="IAM Create Role Use Case image" width="90%" height="90%"></p>
-        <br>
-        
-        e. In the **Add permissions** page, under the **Permissions policies** section, search for and select the following Policy names:
         
         `AWSLambdaBasicExecutionRole`
         
@@ -115,33 +106,24 @@ accordion:
         
         Then click `Next`.
         
-        <p align="center"><img src="img/iam-create-role-perms.png" alt="IAM Create Role Permissions image" width="90%" height="90%"></p>
+        e. On the **Name, review, and create** page, we can provide a  descriptive name for our IAM role such as `ChargebeeExportExecutionRole`. Then scroll to the bottom of the page and click the `Create role` button.
+        
+        We will be redirected to the **Roles** page once the role has finished creating. We can see this new role's details if we click the `View role` button at the top of the screen.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/iam-add-managed-perms.mp4" type="video/mp4">
+            </video>
+        </p>
         <br>
         
-        f. On the **Name, review, and create** page, provide a name for your IAM role such as `ChargebeeExportExecutionRole`. Then click the `Create role` button at the bottom of the page.
+        f. Under the **Permissions policies** section, we can see the two policies that we added in the previous steps.         These policies are **AWS managed policies**, which is a type of pre-made, standalone policy that is created and administered by AWS. Using AWS managed policies can be a lot faster than writing our own policies, but there may be times where it is better to write a custom policy.
         
-        <p align="center"><img src="img/iam-create-role-name.png" alt="IAM Create Role Name image" width="90%" height="90%"></p>
-        <br>
+        We will now create a custom policy for the S3 permissions that we require for this workflow. First, click the `Add permissions` dropdown, and select `Create inline policy`.
         
-        <p align="center"><img src="img/iam-create-role-final.png" alt="IAM Role Create Role image" width="90%" height="90%"></p>
-        <br>
+        g. Then select `Choose a service`. Type in `S3` into the **Find a service** search box and select **S3** when it appears.
         
-        g. You will be redirected to the **Roles** page once the role has finished creating. In the search box of this page, enter the name of the role you just created (Ex: `ChargebeeExportExecutionRole`) and click the role's link.
-        
-        <p align="center"><img src="img/iam-role-search.png" alt="IAM Role Search image" width="90%" height="90%"></p>
-        <br>
-        
-        h. Under the **Permissions policies** section, click the `Add permissions` dropdown, and select `Create inline policy`.
-        
-        <p align="center"><img src="img/iam-create-inline-policy.png" alt="IAM Create Inline Policy image" width="90%" height="90%"></p>
-        <br>
-        
-        i. Select `Choose a service`. Type in `S3` into the **Find a service** search box and select **S3** when it appears.
-        
-        <p align="center"><img src="img/iam-policy-select-s3.png" alt="IAM Policy Select S3 image" width="90%" height="90%"></p>
-        <br>
-        
-        j. Under **Actions - Specify the actions allowed in S3**, search for and select the following permissions:
+        h. Our download Lambda function will require a minimum set of permissions to be able to write files to our S3 bucket. We can add these permissions in the **Actions - Specify the actions allowed in S3** section. Search for and select the following permissions:
         
         `ListBucket`
         
@@ -155,32 +137,37 @@ accordion:
         
         `PutObjectAcl`
         
-        <p align="center"><img src="img/iam-policy-select-actions.png" alt="IAM Policy Select Actions image" width="90%" height="90%"></p>
         <br>
         
-        h. Select the **Resources** section. Keeping the `Specific` option selected, click the `Add ARN` link in the **bucket** section.
-        
-        <p align="center"><img src="img/iam-policy-select-resources.png" alt="IAM Policy Select Resources image" width="90%" height="90%"></p>
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/iam-create-inline-policy-start.mp4" type="video/mp4">
+            </video>
+        </p>
         <br>
         
-        g. In the **Add ARN(s)** pop-up modal, type in the name of the S3 bucket you created earlier in this guide. Then click `Add`.
+        i. Select the **Resources** section. Keeping the `Specific` option selected, click the `Add ARN` link in the **bucket** section.
         
-        <p align="center"><img src="img/iam-policy-select-bucket.png" alt="IAM Policy Select Bucket image" width="90%" height="90%"></p>
+        j. In the **Add ARN(s)** pop-up modal, type in the name of the S3 bucket we created earlier in this guide (e.g. `chargebee-to-aws-tutorial`). Then click `Add`.
+        
+        k. Under **Resources** next to the **object** section, select the check box next to `Any`. Then click `Review policy`.
+        
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/iam-add-inline-policy-resources.mp4" type="video/mp4">
+            </video>
+        </p>
         <br>
         
-        h. Under **Resources** next to the **object** section, select the check box next to `Any`. Then click `Review policy`.
+        l. On the **Review policy** page, we can provide a descriptive name for the policy such as `ChargebeeS3WriteAccess`. Then click `Create policy`.
+        We should now see the custom inline policy in the **Permissions policies** section of the IAM Role details.
         
-        <p align="center"><img src="img/iam-policy-review.png" alt="IAM Policy Review image" width="90%" height="90%"></p>
+        <p align="center">
+            <video autoplay loop muted height="90%" width="90%">
+            	<source src="video/iam-add-inline-policy-name.mp4" type="video/mp4">
+            </video>
+        </p>
         <br>
-        
-        i. On the **Review policy** page, give a name to your policy such as `ChargebeeS3WriteAccess`. Then click `Create policy`.
-        
-        <p align="center"><img src="img/iam-policy-create-final.png" alt="IAM Policy Create image" width="90%" height="90%"></p>
-        <br>
-        
-        You should see the following inline policy in the **Permissions policies** section of your IAM Role.
-        
-        <p align="center"><img src="img/iam-policy-created.png" alt="IAM Policy Created image" width="90%" height="90%"></p>
   - title: Step 6. Create a Lambda Layer for your Lambda Functions
     content: |-
         [Lambda layers](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html) are a convenient way to package libraries and other dependencies that you can use with your Lambda functions. For this particular integration, we will need the Chargebee API library as well as the [Requests](https://pypi.org/project/requests/) library.
@@ -296,10 +283,7 @@ accordion:
         <p align="center"><img src="img/state-machine-workflow-designer.png" alt="Architecture Diagram" width="90%" height="90%"></p>
         <br>
         
-        We will use this visual designer to create workflow as shown in the highlighted `AWS Step Functions workflow` part of architecture diagram below.
-        
-        <p align="center"><img src="img/architecture-workflow-highlight.png" alt="Workflow Designer image" width="90%" height="90%"></p>
-        <br>
+        We will use this visual designer to create workflow as shown in the `AWS Step Functions workflow` part of architecture diagram at the start of this guide.
         
         The first step we will add to our workflow is the "Export" lambda function we created in a previous step. We will do this by dragging and dropping the `AWS Lambda Invoke` action from the left menu into the designer form space.
         
@@ -493,7 +477,7 @@ accordion:
         <p align="center"><img src="img/state-machine-events.png" alt="State Machine Events image" width="90%" height="90%"></p>
         <br>
         
-        c. To verify that the workflow was successful, navigate to the S3 service and click on the name of the S3 Bucket we created in an earlier step (e.g. `chargebee-to-aws-workshop`).
+        c. To verify that the workflow was successful, navigate to the S3 service and click on the name of the S3 Bucket we created in an earlier step (e.g. `chargebee-to-aws-tutorial`).
         
         If you click on the `exports` folder, you should see a series of CSV files related to the export query we made earlier in the tutorial.
         
@@ -544,7 +528,7 @@ This guide will walk you through one option for how you can build your own integ
 
 ## Architecture Overview
 
-<p align="center"><img src="img/architecture.jpg" alt="Architecture Diagram" width="90%" height="90%"></p>
+<p align="center"><img src="img/low-level-diagram.jpg" alt="Architecture Diagram" width="70%" height="70%"></p>
 
 The architecture for this guide is very straightforward. [AWS Lambda](https://aws.amazon.com/lambda/) will initiate an export API call to the Chargebee API. A secondary Lambda will download those files once they are ready. All of your exported Chargebee files will be stored in [Amazon S3](https://aws.amazon.com/s3/). [AWS Step Functions](https://aws.amazon.com/step-functions/) will orchestrate the entire workflow, and your Chargebee Site name and API key will be stored in (and referenced from) [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html). The parameters will be encrypted using [AWS Key Management Service](https://aws.amazon.com/kms/). An optional [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/eventbridge/latest/userguide/scheduler.html) can trigger the workflow on a scheduled basis.  
 
