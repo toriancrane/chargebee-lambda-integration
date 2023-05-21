@@ -502,9 +502,11 @@ accordion:
         
         <p align="center"><img src="img/state-machine-fail.png" alt="State Machine Events image" width="90%" height="90%"></p>
         <br>
-  - title: Step 10. [Optional] Add an Event Bridge Scheduler
+  - title: Step 11. [Optional] Add an Event Bridge Scheduler
     content: |-
+
         > The content of this section is currently a work in progress.
+        
 ---
 
 [Chargebee](https://www.chargebee.com/) is a recurring billing and subscription management tool that helps subscription businesses streamline their Revenue Operations. It offers a variety of functionality, including:
