@@ -163,8 +163,6 @@ Resources:
 #############################
 ######## SSM Resources ######
 #############################
----
-Resources:
   rChargebeeApiParam:
     Type: AWS::SSM::Parameter
     Properties:
