@@ -20,9 +20,9 @@ def lambda_handler(event, context):
     if event["Status"] in ['', 'INITIATED']:
         export_id = initiate_export()
         event['ExportId'] = export_id
-        event['Status'] = "in_process"
+        event['Status'] = "in-progress"
     # Makes a call to Chargebee API to check on the export status for in-progress events
-    elif event['Status'] in ['in_process']:
+    elif event['Status'] in ['in-progress']:
         export_id = event['ExportId']
         export_status_output = get_export_status(export_id).__dict__
         export_values = export_status_output['values']
@@ -33,8 +33,11 @@ def lambda_handler(event, context):
         if status in ['completed']:
             event['Url'] = export_values['download']['download_url']
 
-        event['Status'] = status
-
+        if "in_process" in status:
+          event['Status'] = "in-progress"
+        else:
+          event['Status'] = status
+        
     return event
 
 def get_chargebee_params():
