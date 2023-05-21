@@ -38,6 +38,31 @@ The architecture for this solution is very straightforward. [AWS Lambda](https:/
 
 ## Deployment Instructions
 
-If you are already comfortable working with the services included in this architecture, you can deploy the templates in this repository to build the necessary AWS resources automatically. The sample code in the `chargebee-export.py` makes use of Chargebee's [Export Customers](https://apidocs.chargebee.com/docs/api/exports?prod_cat_ver=2#export_customers) to retrieve a list of all Chargebee customers. You are welcome to customize this function to meet whatever exporting needs you have (see the [Chargebee API Documentation](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2) for more details on available APIs.).
+If you are already comfortable working with the services included in this architecture, you can deploy the template in this repository to build the necessary AWS resources automatically. The sample code in the `chargebee-export.py` makes use of Chargebee's [Export Customers](https://apidocs.chargebee.com/docs/api/exports?prod_cat_ver=2#export_customers) to retrieve a list of all Chargebee customers. You are welcome to customize this function (included in-line as part of the `rExportLambda` resource in the `main.yaml` file) to meet whatever exporting needs you have (see the [Chargebee API Documentation](https://apidocs.chargebee.com/docs/api?prod_cat_ver=2) for more details on available APIs.).
 
-TBD
+1. Login to your AWS account and navigate to the [S3 console](https://s3.console.aws.amazon.com/s3/home). Upload the [chargebee-requests-lambda-layer.zip](https://github.com/toriancrane/chargebee-lambda-integration/blob/main/aws/chargebee-requests-lambda-layer.zip) file to an S3 bucket of your choice. Make a note of the S3 Bucket name and object key as you will provide them as parameter values in a later step.
+2. Navigate to the [CloudFormation](https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/) console. Make sure your region is set to one closer to you. You can see which region you are in by looking in the top right corner of your AWS Console.
+3. Click "Create Stack". Under the **"Specify a template"** section, select the radio button next to **"Upload a template file"**. Click **"Choose file"** and upload the [main.yaml](https://github.com/toriancrane/chargebee-lambda-integration/blob/main/aws/main.yaml) file located in the `aws` folder of this repo. Then click **"Next"**.
+4. Provide a name for the stack (Ex: `chargebee-exporter-app` ) and provide values for the request parameters.
+  - Chargebee Site Name: `<the name of your Chargebee site>`
+	- Chargebee API Key: `<the value of your Chargebee API Key>`
+	- Chargebeen Bucket Name: `<The name to give your Chargebee storage bucket.>`
+	    - S3 Bucket names has specific rules so make sure whatever name you provide meets those requirements. See the S3 [Bucket Naming Rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) documentation for more information.
+	- Lambda Layer Bucket Name: `<the name of the S3 Bucket you uploaded the Lambda Layer to>`
+	- Lambda Layer Object Key: `<the object key of the lambda layer e.g. folder/chargebee-requests-lambda-layer.zip>`
+
+5. Click **"Next"** until you reach the **"Review your-stack name"** screen. Scroll down to the bottom and make sure to click the acknowledge checkbox in the **"Capabilities"** section. Then click submit. You can view the progress of the CloudFormation deployments in the CloudFormation console under the **Events** tab.
+
+6. To test your deploment, navigate to the deployed State Machine and trigger a new execution using the following input object
+
+```
+{
+  "Status": "",
+  "ExportId": "",
+  "Url": ""
+}
+```
+
+### Things to Note:
+
+The Event Bridge Scheduler resource has been deployed in a disabled state, mostly to serve as an example of how to integrate a State Machine with a CRON job. You can configure this resource to meet whatever your recurring export needs are, or you remove the resource altogether if it is unneeded.
