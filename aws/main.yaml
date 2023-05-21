@@ -26,9 +26,10 @@ Metadata:
       pLambdaLayerBucketName:
         default: "S3 Bucket Name"
       pLambdaLayerObjectKey:
-        default: "S3 Object Key
+        default: "S3 Object Key"
 
 Parameters:
+
   pChargebeeBucketName:
     Type: String
     Default: ""
